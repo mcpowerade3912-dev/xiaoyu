@@ -1,0 +1,1718 @@
+{
+	"info": {
+		"name": "订单管理系统 API 测试集",
+		"description": "自动扫描 order_system 项目 Controller 生成，覆盖功能测试、边界异常测试、接口兼容性测试",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080"
+		},
+		{
+			"key": "adminToken",
+			"value": ""
+		},
+		{
+			"key": "userToken",
+			"value": ""
+		},
+		{
+			"key": "testOrderId",
+			"value": ""
+		},
+		{
+			"key": "testAddressId",
+			"value": ""
+		}
+	],
+	"item": [
+		{
+			"name": "00-环境准备（先执行）",
+			"description": "登录获取Token，后续所有接口测试依赖此步骤",
+			"item": [
+				{
+					"name": "TC-PREP-001 管理员登录",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"admin\",\n  \"password\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "login"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.code === '200' && jsonData.data && jsonData.data.token) {",
+									"    pm.collectionVariables.set('adminToken', jsonData.data.token);",
+									"    console.log('管理员Token已保存');",
+									"}",
+									"pm.test('登录成功', function() {",
+									"    pm.expect(jsonData.code).to.eql('200');",
+									"    pm.expect(jsonData.data.token).to.exist;",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "TC-PREP-002 普通用户登录",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"testuser\",\n  \"password\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "login"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.code === '200' && jsonData.data && jsonData.data.token) {",
+									"    pm.collectionVariables.set('userToken', jsonData.data.token);",
+									"    console.log('普通用户Token已保存');",
+									"}",
+									"pm.test('登录成功', function() {",
+									"    pm.expect(jsonData.code).to.eql('200');",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "01-用户模块",
+			"item": [
+				{
+					"name": "TC-USER-001 用户注册-正常流程",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"testuser{{$timestamp}}\",\n  \"password\": \"123456\",\n  \"nickname\": \"测试用户\",\n  \"phone\": \"13800138000\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "register"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('注册成功', function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.code).to.eql('200');",
+									"    pm.expect(jsonData.msg).to.eql('注册成功');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "TC-USER-002 注册-用户名为空",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"\",\n  \"password\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "register"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('用户名为空应返回错误', function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.code).to.not.eql('200');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "TC-USER-003 注册-用户名过短(1字符)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"a\",\n  \"password\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "register"]
+						}
+					}
+				},
+				{
+					"name": "TC-USER-004 注册-密码为空",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"newuser\",\n  \"password\": \"\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "register"]
+						}
+					}
+				},
+				{
+					"name": "TC-USER-005 注册-密码过短(5字符)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"newuser2\",\n  \"password\": \"12345\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "register"]
+						}
+					}
+				},
+				{
+					"name": "TC-USER-006 注册-重复用户名",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"admin\",\n  \"password\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "register"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('重复用户名应返回40002', function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.code).to.eql('40002');",
+									"    pm.expect(jsonData.msg).to.eql('用户已存在');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "TC-USER-007 用户登录-正确账号",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"admin\",\n  \"password\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "login"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('登录成功返回token', function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.code).to.eql('200');",
+									"    pm.expect(jsonData.data.token).to.exist;",
+									"    pm.expect(jsonData.data.userId).to.exist;",
+									"    pm.expect(jsonData.data.role).to.exist;",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "TC-USER-008 登录-用户名不存在",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"nonexistuser999\",\n  \"password\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "login"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('用户不存在应返回40003', function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.code).to.eql('40003');",
+									"    pm.expect(jsonData.msg).to.eql('用户不存在');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "TC-USER-009 登录-密码错误",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"admin\",\n  \"password\": \"wrongpassword\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "login"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('密码错误应返回40004', function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.code).to.eql('40004');",
+									"    pm.expect(jsonData.msg).to.eql('密码错误');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "TC-USER-010 登录-用户名为空",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"\",\n  \"password\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "login"]
+						}
+					}
+				},
+				{
+					"name": "TC-USER-011 用户登出",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/user/logout",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "logout"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('登出成功', function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.code).to.eql('200');",
+									"    pm.expect(jsonData.msg).to.eql('登出成功');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "TC-USER-012 登出后Token失效验证",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/user/logout",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "logout"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('登出后Token应失效返回401', function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.code).to.eql('401');",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "02-商品模块(免登录)",
+			"description": "/goods/** 路径免JWT认证",
+			"item": [
+				{
+					"name": "TC-GOODS-001 商品分页查询-正常",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/goods/page?pageNum=1&pageSize=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["goods", "page"],
+							"query": [
+								{ "key": "pageNum", "value": "1" },
+								{ "key": "pageSize", "value": "10" }
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('分页查询成功', function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.code).to.eql('200');",
+									"    pm.expect(jsonData.data).to.exist;",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "TC-GOODS-002 商品分页-带名称搜索",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/goods/page?pageNum=1&pageSize=10&goodsName=手机",
+							"host": ["{{baseUrl}}"],
+							"path": ["goods", "page"],
+							"query": [
+								{ "key": "pageNum", "value": "1" },
+								{ "key": "pageSize", "value": "10" },
+								{ "key": "goodsName", "value": "手机" }
+							]
+						}
+					}
+				},
+				{
+					"name": "TC-GOODS-003 商品分页-pageNum为空",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/goods/page?pageSize=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["goods", "page"],
+							"query": [
+								{ "key": "pageSize", "value": "10" }
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('pageNum为空应返回错误', function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.code).to.not.eql('200');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "TC-GOODS-004 商品分页-pageNum为0",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/goods/page?pageNum=0&pageSize=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["goods", "page"],
+							"query": [
+								{ "key": "pageNum", "value": "0" },
+								{ "key": "pageSize", "value": "10" }
+							]
+						}
+					}
+				},
+				{
+					"name": "TC-GOODS-005 商品分页-pageNum为负数",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/goods/page?pageNum=-1&pageSize=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["goods", "page"],
+							"query": [
+								{ "key": "pageNum", "value": "-1" },
+								{ "key": "pageSize", "value": "10" }
+							]
+						}
+					}
+				},
+				{
+					"name": "TC-GOODS-006 商品分页-pageSize超大(99999)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/goods/page?pageNum=1&pageSize=99999",
+							"host": ["{{baseUrl}}"],
+							"path": ["goods", "page"],
+							"query": [
+								{ "key": "pageNum", "value": "1" },
+								{ "key": "pageSize", "value": "99999" }
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "03-管理后台-商品管理(需管理员)",
+			"description": "/admin/** 需要JWT且role=1",
+			"item": [
+				{
+					"name": "TC-ADMIN-001 管理员分页查询商品",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"pageNum\": 1,\n  \"pageSize\": 10\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/page",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "page"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('管理员分页查询成功', function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.records || jsonData.data).to.exist;",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "TC-ADMIN-002 新增商品",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"goodsName\": \"测试商品{{$timestamp}}\",\n  \"price\": 99.99,\n  \"stock\": 100,\n  \"pic_url\": \"https://example.com/test.jpg\",\n  \"status\": 1\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/add",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "add"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('新增商品成功', function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.code).to.eql('200');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "TC-ADMIN-003 新增商品-名称为空",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"goodsName\": \"\",\n  \"price\": 99.99,\n  \"stock\": 100\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/add",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "add"]
+						}
+					}
+				},
+				{
+					"name": "TC-ADMIN-004 新增商品-价格为负数",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"goodsName\": \"负价格商品\",\n  \"price\": -10,\n  \"stock\": 100\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/add",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "add"]
+						}
+					}
+				},
+				{
+					"name": "TC-ADMIN-005 编辑商品",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": 1,\n  \"goodsName\": \"编辑后的商品名\",\n  \"price\": 199.99,\n  \"stock\": 200\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/update",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "update"]
+						}
+					}
+				},
+				{
+					"name": "TC-ADMIN-006 商品下架",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/admin/status/1?status=0",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "status", "1"],
+							"query": [
+								{ "key": "status", "value": "0" }
+							]
+						}
+					}
+				},
+				{
+					"name": "TC-ADMIN-007 商品上架",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/admin/status/1?status=1",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "status", "1"],
+							"query": [
+								{ "key": "status", "value": "1" }
+							]
+						}
+					}
+				},
+				{
+					"name": "TC-ADMIN-008 非管理员访问管理接口(应返回403)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"pageNum\": 1,\n  \"pageSize\": 10\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/page",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "page"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('非管理员应返回403', function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.code).to.eql('403');",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "04-购物车模块",
+			"item": [
+				{
+					"name": "TC-CART-001 添加购物车",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"goodsId\": 1,\n  \"buyNum\": 2\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/cart/add",
+							"host": ["{{baseUrl}}"],
+							"path": ["cart", "add"]
+						}
+					}
+				},
+				{
+					"name": "TC-CART-002 添加购物车-goodsId为空",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"buyNum\": 2\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/cart/add",
+							"host": ["{{baseUrl}}"],
+							"path": ["cart", "add"]
+						}
+					}
+				},
+				{
+					"name": "TC-CART-003 添加购物车-buyNum为0",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"goodsId\": 1,\n  \"buyNum\": 0\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/cart/add",
+							"host": ["{{baseUrl}}"],
+							"path": ["cart", "add"]
+						}
+					}
+				},
+				{
+					"name": "TC-CART-004 添加购物车-buyNum为负数",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"goodsId\": 1,\n  \"buyNum\": -1\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/cart/add",
+							"host": ["{{baseUrl}}"],
+							"path": ["cart", "add"]
+						}
+					}
+				},
+				{
+					"name": "TC-CART-005 查询购物车",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/cart/get?goodsId=1&buyNum=1",
+							"host": ["{{baseUrl}}"],
+							"path": ["cart", "get"],
+							"query": [
+								{ "key": "goodsId", "value": "1" },
+								{ "key": "buyNum", "value": "1" }
+							]
+						}
+					}
+				},
+				{
+					"name": "TC-CART-006 更新购物车数量",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"goodsId\": 1,\n  \"buyNum\": 5\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/cart/update",
+							"host": ["{{baseUrl}}"],
+							"path": ["cart", "update"]
+						}
+					}
+				},
+				{
+					"name": "TC-CART-007 未登录访问购物车(应返回401)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/cart/get?goodsId=1&buyNum=1",
+							"host": ["{{baseUrl}}"],
+							"path": ["cart", "get"],
+							"query": [
+								{ "key": "goodsId", "value": "1" },
+								{ "key": "buyNum", "value": "1" }
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('未登录应返回401', function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.code).to.eql('401');",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "05-订单模块",
+			"item": [
+				{
+					"name": "TC-ORDER-001 创建订单",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"addressName\": \"张三\",\n  \"addressPhone\": \"13800138000\",\n  \"addressDetail\": \"北京市海淀区中关村大街1号\",\n  \"goodsList\": [\n    {\n      \"goodsId\": 1,\n      \"buyNum\": 2\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/order/create",
+							"host": ["{{baseUrl}}"],
+							"path": ["order", "create"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('创建订单成功', function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.code).to.eql('200');",
+									"    if (jsonData.data && jsonData.data.orderNo) {",
+									"        pm.collectionVariables.set('testOrderId', jsonData.data.orderNo);",
+									"    }",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "TC-ORDER-002 创建订单-收件人为空",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"addressPhone\": \"13800138000\",\n  \"addressDetail\": \"北京市海淀区\",\n  \"goodsList\": [\n    {\n      \"goodsId\": 1,\n      \"buyNum\": 1\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/order/create",
+							"host": ["{{baseUrl}}"],
+							"path": ["order", "create"]
+						}
+					}
+				},
+				{
+					"name": "TC-ORDER-003 创建订单-商品列表为空",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"addressName\": \"张三\",\n  \"addressPhone\": \"13800138000\",\n  \"addressDetail\": \"北京市海淀区\",\n  \"goodsList\": []\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/order/create",
+							"host": ["{{baseUrl}}"],
+							"path": ["order", "create"]
+						}
+					}
+				},
+				{
+					"name": "TC-ORDER-004 创建订单-buyNum为0",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"addressName\": \"张三\",\n  \"addressPhone\": \"13800138000\",\n  \"addressDetail\": \"北京市海淀区\",\n  \"goodsList\": [\n    {\n      \"goodsId\": 1,\n      \"buyNum\": 0\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/order/create",
+							"host": ["{{baseUrl}}"],
+							"path": ["order", "create"]
+						}
+					}
+				},
+				{
+					"name": "TC-ORDER-005 查询我的订单",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/order/page?pageNum=1&pageSize=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["order", "page"],
+							"query": [
+								{ "key": "pageNum", "value": "1" },
+								{ "key": "pageSize", "value": "10" }
+							]
+						}
+					}
+				},
+				{
+					"name": "TC-ORDER-006 查询订单-按状态筛选",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/order/page?pageNum=1&pageSize=10&status=0",
+							"host": ["{{baseUrl}}"],
+							"path": ["order", "page"],
+							"query": [
+								{ "key": "pageNum", "value": "1" },
+								{ "key": "pageSize", "value": "10" },
+								{ "key": "status", "value": "0" }
+							]
+						}
+					}
+				},
+				{
+					"name": "TC-ORDER-007 查询订单-pageNum为空",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/order/page?pageSize=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["order", "page"],
+							"query": [
+								{ "key": "pageSize", "value": "10" }
+							]
+						}
+					}
+				},
+				{
+					"name": "TC-ORDER-008 订单详情",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/order/detail/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["order", "detail", "1"]
+						}
+					}
+				},
+				{
+					"name": "TC-ORDER-009 取消订单",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/order/cancel/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["order", "cancel", "1"]
+						}
+					}
+				},
+				{
+					"name": "TC-ORDER-010 确认收货",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/order/confirm/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["order", "confirm", "1"]
+						}
+					}
+				},
+				{
+					"name": "TC-ORDER-011 订单详情-不存在的ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/order/detail/999999",
+							"host": ["{{baseUrl}}"],
+							"path": ["order", "detail", "999999"]
+						}
+					}
+				},
+				{
+					"name": "TC-ORDER-012 未登录访问订单(应返回401)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/order/page?pageNum=1&pageSize=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["order", "page"],
+							"query": [
+								{ "key": "pageNum", "value": "1" },
+								{ "key": "pageSize", "value": "10" }
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('未登录应返回401', function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.code).to.eql('401');",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "06-地址模块",
+			"item": [
+				{
+					"name": "TC-ADDR-001 添加地址",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"张三\",\n  \"phone\": \"13800138000\",\n  \"address\": \"北京市海淀区中关村大街1号\",\n  \"isDefault\": 1\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/address/add",
+							"host": ["{{baseUrl}}"],
+							"path": ["address", "add"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('添加地址成功', function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.code).to.eql('200');",
+									"    if (jsonData.data && jsonData.data.id) {",
+									"        pm.collectionVariables.set('testAddressId', jsonData.data.id);",
+									"    }",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "TC-ADDR-002 添加地址-姓名为空",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"\",\n  \"phone\": \"13800138000\",\n  \"address\": \"北京市海淀区\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/address/add",
+							"host": ["{{baseUrl}}"],
+							"path": ["address", "add"]
+						}
+					}
+				},
+				{
+					"name": "TC-ADDR-003 添加地址-手机号格式错误",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"张三\",\n  \"phone\": \"12345\",\n  \"address\": \"北京市海淀区\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/address/add",
+							"host": ["{{baseUrl}}"],
+							"path": ["address", "add"]
+						}
+					}
+				},
+				{
+					"name": "TC-ADDR-004 添加地址-手机号为空",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"张三\",\n  \"phone\": \"\",\n  \"address\": \"北京市海淀区\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/address/add",
+							"host": ["{{baseUrl}}"],
+							"path": ["address", "add"]
+						}
+					}
+				},
+				{
+					"name": "TC-ADDR-005 添加地址-详细地址为空",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"张三\",\n  \"phone\": \"13800138000\",\n  \"address\": \"\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/address/add",
+							"host": ["{{baseUrl}}"],
+							"path": ["address", "add"]
+						}
+					}
+				},
+				{
+					"name": "TC-ADDR-006 查询我的地址列表",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/address/list",
+							"host": ["{{baseUrl}}"],
+							"path": ["address", "list"]
+						}
+					}
+				},
+				{
+					"name": "TC-ADDR-007 查询地址详情",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/address/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["address", "1"]
+						}
+					}
+				},
+				{
+					"name": "TC-ADDR-008 编辑地址",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": 1,\n  \"name\": \"李四\",\n  \"phone\": \"13900139000\",\n  \"address\": \"北京市朝阳区建国路88号\",\n  \"isDefault\": 0\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/address/update",
+							"host": ["{{baseUrl}}"],
+							"path": ["address", "update"]
+						}
+					}
+				},
+				{
+					"name": "TC-ADDR-009 设置默认地址",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/address/default/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["address", "default", "1"]
+						}
+					}
+				},
+				{
+					"name": "TC-ADDR-010 删除地址",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/address/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["address", "1"]
+						}
+					}
+				},
+				{
+					"name": "TC-ADDR-011 删除地址-不存在的ID",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/address/999999",
+							"host": ["{{baseUrl}}"],
+							"path": ["address", "999999"]
+						}
+					}
+				},
+				{
+					"name": "TC-ADDR-012 未登录访问地址(应返回401)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/address/list",
+							"host": ["{{baseUrl}}"],
+							"path": ["address", "list"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('未登录应返回401', function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.code).to.eql('401');",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "07-接口兼容性验证",
+			"description": "验证统一返回格式、状态码规范",
+			"item": [
+				{
+					"name": "TC-API-001 返回格式验证-code字段存在",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/goods/page?pageNum=1&pageSize=5",
+							"host": ["{{baseUrl}}"],
+							"path": ["goods", "page"],
+							"query": [
+								{ "key": "pageNum", "value": "1" },
+								{ "key": "pageSize", "value": "5" }
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('返回格式包含code和msg字段', function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('code');",
+									"    pm.expect(jsonData).to.have.property('msg');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "TC-API-002 返回格式验证-登录返回token结构",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"admin\",\n  \"password\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "login"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('登录返回完整字段', function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.code).to.eql('200');",
+									"    pm.expect(jsonData.data).to.have.property('token');",
+									"    pm.expect(jsonData.data).to.have.property('userId');",
+									"    pm.expect(jsonData.data).to.have.property('username');",
+									"    pm.expect(jsonData.data).to.have.property('role');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "TC-API-003 无效Token应返回401",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer invalidtoken12345"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/cart/get?goodsId=1&buyNum=1",
+							"host": ["{{baseUrl}}"],
+							"path": ["cart", "get"],
+							"query": [
+								{ "key": "goodsId", "value": "1" },
+								{ "key": "buyNum", "value": "1" }
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('无效Token应返回401', function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.code).to.eql('401');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "TC-API-004 缺少Authorization头应返回401",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/order/page?pageNum=1&pageSize=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["order", "page"],
+							"query": [
+								{ "key": "pageNum", "value": "1" },
+								{ "key": "pageSize", "value": "10" }
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('缺少Authorization应返回401', function() {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.code).to.eql('401');",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}
